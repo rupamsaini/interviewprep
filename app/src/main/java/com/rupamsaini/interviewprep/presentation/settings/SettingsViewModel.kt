@@ -16,7 +16,9 @@ data class SettingsUiState(
     val dailyNotificationEnabled: Boolean = true,
     val notificationHour: Int = 9,
     val notificationMinute: Int = 0,
-    val weekendModeEnabled: Boolean = true
+    val weekendModeEnabled: Boolean = true,
+    val preferredDifficulty: String = "All",
+    val preferredCategory: String = "All"
 )
 
 @HiltViewModel
@@ -25,20 +27,33 @@ class SettingsViewModel @Inject constructor(
     private val notificationScheduler: NotificationScheduler
 ) : ViewModel() {
 
+    companion object {
+        val DIFFICULTIES = listOf("All", "Junior", "Mid-Level", "Senior")
+        val CATEGORIES = listOf("All", "Kotlin", "Android", "Jetpack Compose", "Coroutines")
+    }
+
     val uiState: StateFlow<SettingsUiState> = combine(
         preferencesRepository.dailyNotificationEnabled,
         preferencesRepository.notificationTimeHour,
         preferencesRepository.notificationTimeMinute,
-        preferencesRepository.weekendModeEnabled
-    ) { enabled, hour, minute, weekendMode ->
-        SettingsUiState(enabled, hour, minute, weekendMode)
+        preferencesRepository.weekendModeEnabled,
+        preferencesRepository.preferredDifficulty,
+        preferencesRepository.preferredCategory
+    ) { values ->
+        SettingsUiState(
+            dailyNotificationEnabled = values[0] as Boolean,
+            notificationHour = values[1] as Int,
+            notificationMinute = values[2] as Int,
+            weekendModeEnabled = values[3] as Boolean,
+            preferredDifficulty = values[4] as String,
+            preferredCategory = values[5] as String
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
     fun toggleDailyNotification(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setDailyNotificationEnabled(enabled)
             if (enabled) {
-                // Reschedule with current or default time
                 val state = uiState.value
                 notificationScheduler.scheduleDailyNotification(state.notificationHour, state.notificationMinute)
             } else {
@@ -59,6 +74,18 @@ class SettingsViewModel @Inject constructor(
     fun toggleWeekendMode(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setWeekendModeEnabled(enabled)
+        }
+    }
+
+    fun setPreferredDifficulty(difficulty: String) {
+        viewModelScope.launch {
+            preferencesRepository.setPreferredDifficulty(difficulty)
+        }
+    }
+
+    fun setPreferredCategory(category: String) {
+        viewModelScope.launch {
+            preferencesRepository.setPreferredCategory(category)
         }
     }
 }

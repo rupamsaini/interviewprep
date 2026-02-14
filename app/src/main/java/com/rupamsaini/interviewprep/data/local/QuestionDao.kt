@@ -29,6 +29,18 @@ interface QuestionDao {
     @Update
     suspend fun update(question: QuestionEntity)
 
+    @Query("SELECT * FROM questions ORDER BY RANDOM() LIMIT 1")
+    suspend fun getRandomQuestion(): QuestionEntity?
+
+    @Query("SELECT * FROM questions WHERE category = :category ORDER BY RANDOM() LIMIT 1")
+    suspend fun getRandomQuestionByCategory(category: String): QuestionEntity?
+
+    @Query("SELECT * FROM questions WHERE difficulty = :difficulty ORDER BY RANDOM() LIMIT 1")
+    suspend fun getRandomQuestionByDifficulty(difficulty: String): QuestionEntity?
+
+    @Query("SELECT * FROM questions WHERE category = :category AND difficulty = :difficulty ORDER BY RANDOM() LIMIT 1")
+    suspend fun getRandomQuestionByCategoryAndDifficulty(category: String, difficulty: String): QuestionEntity?
+
     @Delete
     suspend fun delete(question: QuestionEntity)
 }

@@ -60,30 +60,42 @@ class QuestionRepositoryImpl @Inject constructor(
         return questions.size
     }
 
-    override suspend fun fetchNewQuestion(force: Boolean): Question? {
-        // Logic:
-        // 1. Check Rate Limit (1 hour)
-        // 2. 5% Probability check
-        // 3. Call AI
-        // 4. Fallback to local random if AI skipped or failed
+    override suspend fun getRandomLocalQuestion(): Question? {
+        val category = userPreferences.preferredCategory.first()
+        val difficulty = userPreferences.preferredDifficulty.first()
 
+        val hasCategory = category != "All"
+        val hasDifficulty = difficulty != "All"
+        // Map display-level difficulty to DB-level value (lowercase)
+        val dbDifficulty = difficulty.lowercase().replace("-level", "")
+
+        val entity = when {
+            hasCategory && hasDifficulty -> dao.getRandomQuestionByCategoryAndDifficulty(category, dbDifficulty)
+            hasCategory -> dao.getRandomQuestionByCategory(category)
+            hasDifficulty -> dao.getRandomQuestionByDifficulty(dbDifficulty)
+            else -> dao.getRandomQuestion()
+        }
+        return entity?.toDomain()
+    }
+
+    override suspend fun fetchNewQuestion(force: Boolean): Question? {
         val lastRequest = userPreferences.lastAiRequestTimestamp.first()
         val currentTime = System.currentTimeMillis()
         val oneHourMs = 3600 * 1000
 
         val canCallAi = true
-//        val canCallAi = force || (currentTime - lastRequest) > oneHourMs
-//        val randomChance = force || Random.nextFloat() < 0.05f // 5% chance
-        val randomChance = true // 5% chance
+        val randomChance = true
 
-        // Let's try to fetch from AI if allowed.
         if (canCallAi && randomChance) {
              try {
-                 // Random category/difficulty for variety
+                 // Use user's preferred category/difficulty, or random if "All"
+                 val prefCategory = userPreferences.preferredCategory.first()
+                 val prefDifficulty = userPreferences.preferredDifficulty.first()
+
                  val categories = listOf("Kotlin", "Android", "Jetpack Compose", "Coroutines")
                  val difficulties = listOf("Junior", "Mid-Level", "Senior")
-                 val category = categories.random()
-                 val difficulty = difficulties.random()
+                 val category = if (prefCategory == "All") categories.random() else prefCategory
+                 val difficulty = if (prefDifficulty == "All") difficulties.random() else prefDifficulty
 
                  val aiQuestion = geminiDataSource.generateQuestion(category, difficulty)
                  if (aiQuestion != null) {

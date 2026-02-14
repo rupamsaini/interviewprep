@@ -22,4 +22,6 @@ interface QuestionRepository {
     suspend fun processReview(question: Question, quality: Int)
     
     suspend fun importQuestionsFromUrl(url: String): Int
+
+    suspend fun getRandomLocalQuestion(): Question?
 }

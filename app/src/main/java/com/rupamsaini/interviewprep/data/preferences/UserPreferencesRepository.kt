@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,8 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATION_TIME_MINUTE = intPreferencesKey("notification_time_minute")
         val WEEKEND_MODE_ENABLED = booleanPreferencesKey("weekend_mode_enabled")
         val LAST_AI_REQUEST_TIMESTAMP = longPreferencesKey("last_ai_request_timestamp")
+        val PREFERRED_DIFFICULTY = stringPreferencesKey("preferred_difficulty")
+        val PREFERRED_CATEGORY = stringPreferencesKey("preferred_category")
     }
 
     val dailyNotificationEnabled: Flow<Boolean> = dataStore.data.map { it[DAILY_NOTIFICATION_ENABLED] ?: true }
@@ -35,6 +38,8 @@ class UserPreferencesRepository @Inject constructor(
     val notificationTimeMinute: Flow<Int> = dataStore.data.map { it[NOTIFICATION_TIME_MINUTE] ?: 0 }
     val weekendModeEnabled: Flow<Boolean> = dataStore.data.map { it[WEEKEND_MODE_ENABLED] ?: true }
     val lastAiRequestTimestamp: Flow<Long> = dataStore.data.map { it[LAST_AI_REQUEST_TIMESTAMP] ?: 0L }
+    val preferredDifficulty: Flow<String> = dataStore.data.map { it[PREFERRED_DIFFICULTY] ?: "All" }
+    val preferredCategory: Flow<String> = dataStore.data.map { it[PREFERRED_CATEGORY] ?: "All" }
 
     suspend fun setDailyNotificationEnabled(enabled: Boolean) {
         dataStore.edit { it[DAILY_NOTIFICATION_ENABLED] = enabled }
@@ -53,5 +58,13 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setLastAiRequestTimestamp(timestamp: Long) {
         dataStore.edit { it[LAST_AI_REQUEST_TIMESTAMP] = timestamp }
+    }
+
+    suspend fun setPreferredDifficulty(difficulty: String) {
+        dataStore.edit { it[PREFERRED_DIFFICULTY] = difficulty }
+    }
+
+    suspend fun setPreferredCategory(category: String) {
+        dataStore.edit { it[PREFERRED_CATEGORY] = category }
     }
 }
