@@ -1,0 +1,29 @@
+[
+  {
+    "question": "What is the difference between Val and Var?",
+    "answer": "Val is immutable (read-only), while Var is mutable (reassignable).",
+    "category": "Kotlin",
+    "difficulty": "junior",
+    "source": "local",
+    "explanation": "Once a value is assigned to a val, it cannot be changed. var can be reassigned multiple times.",
+    "codeExample": "val name = \"John\" // Cannot change\nvar age = 30 // Can change"
+  },
+  {
+    "question": "Explain the Activity Lifecycle.",
+    "answer": "onCreate, onStart, onResume, onPause, onStop, onDestroy, onRestart.",
+    "category": "Android",
+    "difficulty": "junior",
+    "source": "local",
+    "explanation": "The lifecycle methods govern how an activity behaves when it enters, leaves, or comes back to the foreground.",
+    "codeExample": null
+  },
+  {
+    "question": "What is a Coroutine?",
+    "answer": "A concurrency design pattern that uses lightweight threads to simplify code that executes asynchronously.",
+    "category": "Kotlin",
+    "difficulty": "mid",
+    "source": "local",
+    "explanation": "Coroutines allow you to write asynchronous code in a sequential manner.",
+    "codeExample": "GlobalScope.launch { \n  delay(1000L)\n  println(\"Hello\")\n}"
+  }
+]
