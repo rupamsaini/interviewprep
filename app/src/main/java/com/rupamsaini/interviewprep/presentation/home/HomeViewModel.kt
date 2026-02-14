@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +25,12 @@ class HomeViewModel @Inject constructor(
     private val importQuestionsUseCase: ImportQuestionsUseCase
 ) : ViewModel() {
 
+    companion object {
+        val CATEGORIES = listOf("All", "Kotlin", "Android", "Jetpack Compose", "Coroutines")
+        val DIFFICULTIES = listOf("All", "Junior", "Mid-Level", "Senior")
+        val SOURCES = listOf("All", "Local", "AI", "Scraped")
+    }
+
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
 
@@ -33,12 +40,54 @@ class HomeViewModel @Inject constructor(
     private val _fetchedQuestionId = MutableStateFlow<Long?>(null)
     val fetchedQuestionId: StateFlow<Long?> = _fetchedQuestionId.asStateFlow()
 
-    val questions: StateFlow<List<Question>> = getAllQuestionsUseCase()
+    // Filter state
+    private val _selectedCategory = MutableStateFlow("All")
+    val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
+    private val _selectedDifficulty = MutableStateFlow("All")
+    val selectedDifficulty: StateFlow<String> = _selectedDifficulty.asStateFlow()
+
+    private val _selectedSource = MutableStateFlow("All")
+    val selectedSource: StateFlow<String> = _selectedSource.asStateFlow()
+
+    private val allQuestions: StateFlow<List<Question>> = getAllQuestionsUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val questions: StateFlow<List<Question>> = combine(
+        allQuestions,
+        _selectedCategory,
+        _selectedDifficulty,
+        _selectedSource
+    ) { questions, category, difficulty, source ->
+        questions.filter { q ->
+            val matchesCategory = category == "All" || q.category.equals(category, ignoreCase = true)
+            val matchesDifficulty = difficulty == "All" || q.difficulty.equals(
+                difficulty.lowercase().replace("-level", ""), ignoreCase = true
+            )
+            val matchesSource = source == "All" || q.source.equals(source, ignoreCase = true)
+            matchesCategory && matchesDifficulty && matchesSource
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun setSelectedCategory(category: String) {
+        _selectedCategory.value = category
+    }
+
+    fun setSelectedDifficulty(difficulty: String) {
+        _selectedDifficulty.value = difficulty
+    }
+
+    fun setSelectedSource(source: String) {
+        _selectedSource.value = source
+    }
 
     fun onFetchQuestionClick() {
         _showSourcePicker.value = true
