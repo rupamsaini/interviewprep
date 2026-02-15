@@ -13,7 +13,7 @@ import com.rupamsaini.interviewprep.data.remote.GeminiDataSource
 import com.rupamsaini.interviewprep.data.remote.WebScraperDataSource
 import com.rupamsaini.interviewprep.domain.util.SpacedRepetitionCalculator
 import kotlinx.coroutines.flow.first
-import kotlin.random.Random
+import java.util.Calendar
 
 class QuestionRepositoryImpl @Inject constructor(
     private val dao: QuestionDao,
@@ -66,7 +66,6 @@ class QuestionRepositoryImpl @Inject constructor(
 
         val hasCategory = category != "All"
         val hasDifficulty = difficulty != "All"
-        // Map display-level difficulty to DB-level value (lowercase)
         val dbDifficulty = difficulty.lowercase().replace("-level", "")
 
         val entity = when {
@@ -81,14 +80,12 @@ class QuestionRepositoryImpl @Inject constructor(
     override suspend fun fetchNewQuestion(force: Boolean): Question? {
         val lastRequest = userPreferences.lastAiRequestTimestamp.first()
         val currentTime = System.currentTimeMillis()
-        val oneHourMs = 3600 * 1000
 
         val canCallAi = true
         val randomChance = true
 
         if (canCallAi && randomChance) {
              try {
-                 // Use user's preferred category/difficulty, or random if "All"
                  val prefCategory = userPreferences.preferredCategory.first()
                  val prefDifficulty = userPreferences.preferredDifficulty.first()
 
@@ -109,5 +106,29 @@ class QuestionRepositoryImpl @Inject constructor(
         }
         
         return null
+    }
+
+    override suspend fun deleteQuestions(scope: String): Int {
+        return when (scope) {
+            "All" -> dao.deleteAll()
+            "Today" -> {
+                val todayStart = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                dao.deleteCreatedAfter(todayStart)
+            }
+            // Category-based scopes prefixed with "cat:"
+            else -> when {
+                scope.startsWith("cat:") -> dao.deleteByCategory(scope.removePrefix("cat:"))
+                scope.startsWith("diff:") -> {
+                    val difficulty = scope.removePrefix("diff:").lowercase().replace("-level", "")
+                    dao.deleteByDifficulty(difficulty)
+                }
+                else -> 0
+            }
+        }
     }
 }

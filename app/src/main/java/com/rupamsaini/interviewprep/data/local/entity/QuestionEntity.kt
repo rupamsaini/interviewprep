@@ -16,6 +16,7 @@ data class QuestionEntity(
     val codeExample: String? = null,
     val lastShown: Long = 0,
     val userRating: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
 
     // Spaced Repetition
     val repetition: Int = 0,
@@ -34,6 +35,7 @@ data class QuestionEntity(
         codeExample = codeExample,
         lastShown = lastShown,
         userRating = userRating,
+        createdAt = createdAt,
         repetition = repetition,
         easinessFactor = easinessFactor,
         interval = interval,
@@ -52,6 +54,7 @@ fun Question.toEntity() = QuestionEntity(
     codeExample = codeExample,
     lastShown = lastShown,
     userRating = userRating,
+    createdAt = createdAt,
     repetition = repetition,
     easinessFactor = easinessFactor,
     interval = interval,

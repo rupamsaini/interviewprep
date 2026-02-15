@@ -116,8 +116,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isGenerating.value = true
             try {
-                val question = fetchNewQuestionUseCase(force = true)
-                _fetchedQuestionId.value = question?.id
+                fetchNewQuestionUseCase(force = true)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

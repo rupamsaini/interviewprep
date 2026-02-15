@@ -5,16 +5,17 @@ data class Question(
     val question: String,
     val answer: String,
     val category: String,
-    val difficulty: String, // "junior", "mid", "senior"
-    val source: String, // "local", "ai", "scraped"
+    val difficulty: String,
+    val source: String,
     val explanation: String? = null,
     val codeExample: String? = null,
     val lastShown: Long = 0,
-    val userRating: Int = 0, // 1-5
+    val userRating: Int = 0,
+    val createdAt: Long = 0,
 
-    // Spaced Repetition (SM-2)
+    // Spaced Repetition
     val repetition: Int = 0,
     val easinessFactor: Float = 2.5f,
-    val interval: Int = 0, // In days
-    val nextReviewDate: Long = 0 // Timestamp
+    val interval: Int = 0,
+    val nextReviewDate: Long = 0
 )

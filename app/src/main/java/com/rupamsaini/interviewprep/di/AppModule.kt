@@ -34,6 +34,7 @@ object AppModule {
             AppDatabase.DATABASE_NAME
         )
         .addCallback(callback)
+        .addMigrations(AppDatabase.MIGRATION_2_3)
         .fallbackToDestructiveMigration()
         .build()
     }

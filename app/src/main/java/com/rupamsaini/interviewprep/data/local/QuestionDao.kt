@@ -43,4 +43,17 @@ interface QuestionDao {
 
     @Delete
     suspend fun delete(question: QuestionEntity)
+
+    // Bulk delete queries
+    @Query("DELETE FROM questions")
+    suspend fun deleteAll(): Int
+
+    @Query("DELETE FROM questions WHERE category = :category")
+    suspend fun deleteByCategory(category: String): Int
+
+    @Query("DELETE FROM questions WHERE difficulty = :difficulty")
+    suspend fun deleteByDifficulty(difficulty: String): Int
+
+    @Query("DELETE FROM questions WHERE createdAt >= :timestamp")
+    suspend fun deleteCreatedAfter(timestamp: Long): Int
 }

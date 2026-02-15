@@ -31,6 +31,10 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_AI_REQUEST_TIMESTAMP = longPreferencesKey("last_ai_request_timestamp")
         val PREFERRED_DIFFICULTY = stringPreferencesKey("preferred_difficulty")
         val PREFERRED_CATEGORY = stringPreferencesKey("preferred_category")
+        val AUTO_DELETE_SCOPE = stringPreferencesKey("auto_delete_scope")
+        val AUTO_DELETE_SCHEDULED = booleanPreferencesKey("auto_delete_scheduled")
+        val AUTO_DELETE_HOUR = intPreferencesKey("auto_delete_hour")
+        val AUTO_DELETE_MINUTE = intPreferencesKey("auto_delete_minute")
     }
 
     val dailyNotificationEnabled: Flow<Boolean> = dataStore.data.map { it[DAILY_NOTIFICATION_ENABLED] ?: true }
@@ -40,6 +44,10 @@ class UserPreferencesRepository @Inject constructor(
     val lastAiRequestTimestamp: Flow<Long> = dataStore.data.map { it[LAST_AI_REQUEST_TIMESTAMP] ?: 0L }
     val preferredDifficulty: Flow<String> = dataStore.data.map { it[PREFERRED_DIFFICULTY] ?: "All" }
     val preferredCategory: Flow<String> = dataStore.data.map { it[PREFERRED_CATEGORY] ?: "All" }
+    val autoDeleteScope: Flow<String> = dataStore.data.map { it[AUTO_DELETE_SCOPE] ?: "All" }
+    val autoDeleteScheduled: Flow<Boolean> = dataStore.data.map { it[AUTO_DELETE_SCHEDULED] ?: false }
+    val autoDeleteHour: Flow<Int> = dataStore.data.map { it[AUTO_DELETE_HOUR] ?: 0 }
+    val autoDeleteMinute: Flow<Int> = dataStore.data.map { it[AUTO_DELETE_MINUTE] ?: 0 }
 
     suspend fun setDailyNotificationEnabled(enabled: Boolean) {
         dataStore.edit { it[DAILY_NOTIFICATION_ENABLED] = enabled }
@@ -66,5 +74,20 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setPreferredCategory(category: String) {
         dataStore.edit { it[PREFERRED_CATEGORY] = category }
+    }
+
+    suspend fun setAutoDeleteScope(scope: String) {
+        dataStore.edit { it[AUTO_DELETE_SCOPE] = scope }
+    }
+
+    suspend fun setAutoDeleteScheduled(scheduled: Boolean) {
+        dataStore.edit { it[AUTO_DELETE_SCHEDULED] = scheduled }
+    }
+
+    suspend fun setAutoDeleteTime(hour: Int, minute: Int) {
+        dataStore.edit {
+            it[AUTO_DELETE_HOUR] = hour
+            it[AUTO_DELETE_MINUTE] = minute
+        }
     }
 }

@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rupamsaini.interviewprep.data.preferences.UserPreferencesRepository
 import com.rupamsaini.interviewprep.domain.manager.NotificationScheduler
+import com.rupamsaini.interviewprep.domain.repository.QuestionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -18,35 +21,66 @@ data class SettingsUiState(
     val notificationMinute: Int = 0,
     val weekendModeEnabled: Boolean = true,
     val preferredDifficulty: String = "All",
-    val preferredCategory: String = "All"
+    val preferredCategory: String = "All",
+    val autoDeleteScope: String = "All",
+    val autoDeleteScheduled: Boolean = false,
+    val autoDeleteHour: Int = 0,
+    val autoDeleteMinute: Int = 0
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferencesRepository: UserPreferencesRepository,
-    private val notificationScheduler: NotificationScheduler
+    private val notificationScheduler: NotificationScheduler,
+    private val questionRepository: QuestionRepository
 ) : ViewModel() {
 
     companion object {
         val DIFFICULTIES = listOf("All", "Junior", "Mid-Level", "Senior")
         val CATEGORIES = listOf("All", "Kotlin", "Android", "Jetpack Compose", "Coroutines")
+        val DELETE_SCOPES = listOf(
+            "All" to "All Questions",
+            "Today" to "Today's Questions",
+            "cat:Kotlin" to "Category: Kotlin",
+            "cat:Android" to "Category: Android",
+            "cat:Jetpack Compose" to "Category: Jetpack Compose",
+            "cat:Coroutines" to "Category: Coroutines",
+            "diff:Junior" to "Difficulty: Junior",
+            "diff:Mid-Level" to "Difficulty: Mid-Level",
+            "diff:Senior" to "Difficulty: Senior"
+        )
     }
 
+    private val _deleteResult = MutableStateFlow<String?>(null)
+    val deleteResult: StateFlow<String?> = _deleteResult.asStateFlow()
+
     val uiState: StateFlow<SettingsUiState> = combine(
-        preferencesRepository.dailyNotificationEnabled,
-        preferencesRepository.notificationTimeHour,
-        preferencesRepository.notificationTimeMinute,
-        preferencesRepository.weekendModeEnabled,
-        preferencesRepository.preferredDifficulty,
-        preferencesRepository.preferredCategory
-    ) { values ->
+        combine(
+            preferencesRepository.dailyNotificationEnabled,
+            preferencesRepository.notificationTimeHour,
+            preferencesRepository.notificationTimeMinute,
+            preferencesRepository.weekendModeEnabled,
+            preferencesRepository.preferredDifficulty,
+        ) { values -> values },
+        combine(
+            preferencesRepository.preferredCategory,
+            preferencesRepository.autoDeleteScope,
+            preferencesRepository.autoDeleteScheduled,
+            preferencesRepository.autoDeleteHour,
+            preferencesRepository.autoDeleteMinute
+        ) { values -> values }
+    ) { group1, group2 ->
         SettingsUiState(
-            dailyNotificationEnabled = values[0] as Boolean,
-            notificationHour = values[1] as Int,
-            notificationMinute = values[2] as Int,
-            weekendModeEnabled = values[3] as Boolean,
-            preferredDifficulty = values[4] as String,
-            preferredCategory = values[5] as String
+            dailyNotificationEnabled = group1[0] as Boolean,
+            notificationHour = group1[1] as Int,
+            notificationMinute = group1[2] as Int,
+            weekendModeEnabled = group1[3] as Boolean,
+            preferredDifficulty = group1[4] as String,
+            preferredCategory = group2[0] as String,
+            autoDeleteScope = group2[1] as String,
+            autoDeleteScheduled = group2[2] as Boolean,
+            autoDeleteHour = group2[3] as Int,
+            autoDeleteMinute = group2[4] as Int
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -87,5 +121,49 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.setPreferredCategory(category)
         }
+    }
+
+    fun setAutoDeleteScope(scope: String) {
+        viewModelScope.launch {
+            preferencesRepository.setAutoDeleteScope(scope)
+        }
+    }
+
+    fun toggleScheduledDelete(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setAutoDeleteScheduled(enabled)
+            if (enabled) {
+                val state = uiState.value
+                notificationScheduler.scheduleDailyDeletion(state.autoDeleteHour, state.autoDeleteMinute)
+            } else {
+                notificationScheduler.cancelDailyDeletion()
+            }
+        }
+    }
+
+    fun setAutoDeleteTime(hour: Int, minute: Int) {
+        viewModelScope.launch {
+            preferencesRepository.setAutoDeleteTime(hour, minute)
+            if (uiState.value.autoDeleteScheduled) {
+                notificationScheduler.scheduleDailyDeletion(hour, minute)
+            }
+        }
+    }
+
+    fun deleteNow() {
+        viewModelScope.launch {
+            try {
+                val scope = uiState.value.autoDeleteScope
+                val count = questionRepository.deleteQuestions(scope)
+                val label = DELETE_SCOPES.find { it.first == scope }?.second ?: scope
+                _deleteResult.value = "Deleted $count questions ($label)"
+            } catch (e: Exception) {
+                _deleteResult.value = "Failed to delete: ${e.message}"
+            }
+        }
+    }
+
+    fun clearDeleteResult() {
+        _deleteResult.value = null
     }
 }

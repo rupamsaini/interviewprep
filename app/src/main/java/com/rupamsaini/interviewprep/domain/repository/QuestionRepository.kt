@@ -24,4 +24,6 @@ interface QuestionRepository {
     suspend fun importQuestionsFromUrl(url: String): Int
 
     suspend fun getRandomLocalQuestion(): Question?
+
+    suspend fun deleteQuestions(scope: String): Int
 }
