@@ -88,13 +88,17 @@ class QuestionRepositoryImpl @Inject constructor(
              try {
                  val prefCategory = userPreferences.preferredCategory.first()
                  val prefDifficulty = userPreferences.preferredDifficulty.first()
+                 val selectedTopics = userPreferences.selectedTopics.first()
 
-                 val categories = listOf("Kotlin", "Android", "Jetpack Compose", "Coroutines")
                  val difficulties = listOf("Junior", "Mid-Level", "Senior")
-                 val category = if (prefCategory == "All") categories.random() else prefCategory
+                 val topic = if (prefCategory == "All") {
+                     selectedTopics.randomOrNull() ?: "Android"
+                 } else {
+                     prefCategory
+                 }
                  val difficulty = if (prefDifficulty == "All") difficulties.random() else prefDifficulty
 
-                 val aiQuestion = geminiDataSource.generateQuestion(category, difficulty)
+                 val aiQuestion = geminiDataSource.generateQuestion(topic, difficulty)
                  if (aiQuestion != null) {
                      userPreferences.setLastAiRequestTimestamp(currentTime)
                      insertQuestion(aiQuestion)

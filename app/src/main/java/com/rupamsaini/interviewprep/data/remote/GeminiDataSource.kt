@@ -19,12 +19,13 @@ class GeminiDataSource @Inject constructor() {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun generateQuestion(category: String, difficulty: String): Question? {
+    suspend fun generateQuestion(topic: String, difficulty: String): Question? {
         // If API key is missing (e.g. CI/CD or initial setup), return null gracefully
         if (BuildConfig.GEMINI_API_KEY.isEmpty()) return null
 
         val prompt = """
-            Generate a single Android interview question for a '$difficulty' level candidate in the category of '$category'.
+            Generate a single mobile development interview question for a '$difficulty' level candidate about '$topic'.
+            The question should be relevant to mobile/Android development.
             Return strictly valid JSON with no markdown formatting.
             Structure:
             {
@@ -40,10 +41,8 @@ class GeminiDataSource @Inject constructor() {
             val responseText = response.text?.replace("```json", "")?.replace("```", "")?.trim()
             
             if (responseText != null) {
-                // Parse JSON manually or via library. using manual simple extraction for robustness or simple DTO
-                // For simplicity and robustness given prompt instructions, let's try to parse via Serialization
                 val dto = json.decodeFromString<GeminiQuestionDto>(responseText)
-                dto.toDomain(category, difficulty)
+                dto.toDomain(topic, difficulty)
             } else {
                 null
             }

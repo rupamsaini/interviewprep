@@ -25,8 +25,17 @@ data class SettingsUiState(
     val autoDeleteScope: String = "All",
     val autoDeleteScheduled: Boolean = false,
     val autoDeleteHour: Int = 0,
-    val autoDeleteMinute: Int = 0
-)
+    val autoDeleteMinute: Int = 0,
+    val selectedTopics: Set<String> = ALL_TOPICS
+) {
+    companion object {
+        val ALL_TOPICS = setOf(
+            "Kotlin", "Android", "Jetpack Compose", "Coroutines",
+            "System Design", "Design Patterns", "Security",
+            "Performance Optimization", "Testing & QA", "Networking & APIs"
+        )
+    }
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -37,7 +46,11 @@ class SettingsViewModel @Inject constructor(
 
     companion object {
         val DIFFICULTIES = listOf("All", "Junior", "Mid-Level", "Senior")
-        val CATEGORIES = listOf("All", "Kotlin", "Android", "Jetpack Compose", "Coroutines")
+        val CATEGORIES = listOf(
+            "All", "Kotlin", "Android", "Jetpack Compose", "Coroutines",
+            "System Design", "Design Patterns", "Security",
+            "Performance Optimization", "Testing & QA", "Networking & APIs"
+        )
         val DELETE_SCOPES = listOf(
             "All" to "All Questions",
             "Today" to "Today's Questions",
@@ -45,6 +58,12 @@ class SettingsViewModel @Inject constructor(
             "cat:Android" to "Category: Android",
             "cat:Jetpack Compose" to "Category: Jetpack Compose",
             "cat:Coroutines" to "Category: Coroutines",
+            "cat:System Design" to "Category: System Design",
+            "cat:Design Patterns" to "Category: Design Patterns",
+            "cat:Security" to "Category: Security",
+            "cat:Performance Optimization" to "Category: Performance Optimization",
+            "cat:Testing & QA" to "Category: Testing & QA",
+            "cat:Networking & APIs" to "Category: Networking & APIs",
             "diff:Junior" to "Difficulty: Junior",
             "diff:Mid-Level" to "Difficulty: Mid-Level",
             "diff:Senior" to "Difficulty: Senior"
@@ -68,8 +87,9 @@ class SettingsViewModel @Inject constructor(
             preferencesRepository.autoDeleteScheduled,
             preferencesRepository.autoDeleteHour,
             preferencesRepository.autoDeleteMinute
-        ) { values -> values }
-    ) { group1, group2 ->
+        ) { values -> values },
+        preferencesRepository.selectedTopics
+    ) { group1, group2, topics ->
         SettingsUiState(
             dailyNotificationEnabled = group1[0] as Boolean,
             notificationHour = group1[1] as Int,
@@ -80,7 +100,8 @@ class SettingsViewModel @Inject constructor(
             autoDeleteScope = group2[1] as String,
             autoDeleteScheduled = group2[2] as Boolean,
             autoDeleteHour = group2[3] as Int,
-            autoDeleteMinute = group2[4] as Int
+            autoDeleteMinute = group2[4] as Int,
+            selectedTopics = topics
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -165,5 +186,23 @@ class SettingsViewModel @Inject constructor(
 
     fun clearDeleteResult() {
         _deleteResult.value = null
+    }
+
+    fun toggleTopic(topic: String) {
+        viewModelScope.launch {
+            val current = uiState.value.selectedTopics
+            val updated = if (current.contains(topic)) current - topic else current + topic
+            if (updated.isNotEmpty()) preferencesRepository.setSelectedTopics(updated)
+        }
+    }
+
+    fun selectAllTopics() {
+        viewModelScope.launch {
+            preferencesRepository.setSelectedTopics(SettingsUiState.ALL_TOPICS)
+        }
+    }
+
+    fun deselectAllTopics() {
+        // Keep at least one topic selected to avoid empty state
     }
 }

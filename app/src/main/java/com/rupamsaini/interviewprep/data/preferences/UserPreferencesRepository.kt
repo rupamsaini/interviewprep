@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,13 @@ class UserPreferencesRepository @Inject constructor(
         val AUTO_DELETE_SCHEDULED = booleanPreferencesKey("auto_delete_scheduled")
         val AUTO_DELETE_HOUR = intPreferencesKey("auto_delete_hour")
         val AUTO_DELETE_MINUTE = intPreferencesKey("auto_delete_minute")
+        val SELECTED_TOPICS = stringSetPreferencesKey("selected_topics")
+
+        val ALL_TOPICS = setOf(
+            "Kotlin", "Android", "Jetpack Compose", "Coroutines",
+            "System Design", "Design Patterns", "Security",
+            "Performance Optimization", "Testing & QA", "Networking & APIs"
+        )
     }
 
     val dailyNotificationEnabled: Flow<Boolean> = dataStore.data.map { it[DAILY_NOTIFICATION_ENABLED] ?: true }
@@ -48,6 +56,7 @@ class UserPreferencesRepository @Inject constructor(
     val autoDeleteScheduled: Flow<Boolean> = dataStore.data.map { it[AUTO_DELETE_SCHEDULED] ?: false }
     val autoDeleteHour: Flow<Int> = dataStore.data.map { it[AUTO_DELETE_HOUR] ?: 0 }
     val autoDeleteMinute: Flow<Int> = dataStore.data.map { it[AUTO_DELETE_MINUTE] ?: 0 }
+    val selectedTopics: Flow<Set<String>> = dataStore.data.map { it[SELECTED_TOPICS] ?: ALL_TOPICS }
 
     suspend fun setDailyNotificationEnabled(enabled: Boolean) {
         dataStore.edit { it[DAILY_NOTIFICATION_ENABLED] = enabled }
@@ -89,5 +98,9 @@ class UserPreferencesRepository @Inject constructor(
             it[AUTO_DELETE_HOUR] = hour
             it[AUTO_DELETE_MINUTE] = minute
         }
+    }
+
+    suspend fun setSelectedTopics(topics: Set<String>) {
+        dataStore.edit { it[SELECTED_TOPICS] = topics }
     }
 }

@@ -26,7 +26,11 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        val CATEGORIES = listOf("All", "Kotlin", "Android", "Jetpack Compose", "Coroutines")
+        val CATEGORIES = listOf(
+            "All", "Kotlin", "Android", "Jetpack Compose", "Coroutines",
+            "System Design", "Design Patterns", "Security",
+            "Performance Optimization", "Testing & QA", "Networking & APIs"
+        )
         val DIFFICULTIES = listOf("All", "Junior", "Mid-Level", "Senior")
         val SOURCES = listOf("All", "Local", "AI", "Scraped")
     }
